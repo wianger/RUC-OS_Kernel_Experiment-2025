@@ -1,11 +1,11 @@
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/moduleparam.h>
-#include <linux/types.h>
-#include <linux/sched/signal.h>
-#include <linux/mm.h>
 #include <linux/fs.h>
+#include <linux/init.h>
+#include <linux/mm.h>
 #include <linux/mman.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/sched/signal.h>
+#include <linux/types.h>
 
 /* 模块参数：指定目标 PID（-1 表示所有进程） */
 static int pid = -1;
@@ -13,61 +13,66 @@ module_param(pid, int, 0644);
 MODULE_PARM_DESC(pid, "Target PID (-1 for all processes)");
 
 // 初始化模块
-static int __init traverse_all_vma_init(void)
-{
-    struct task_struct *task;
-    struct vm_area_struct *vma;
-    struct vma_iterator vmi;
+static int __init traverse_all_vma_init(void) {
+  struct task_struct *task;
+  struct vm_area_struct *vma;
+  struct vma_iterator vmi;
 
-    // 遍历系统中所有进程
-    for_each_process(task) {
-        struct mm_struct *mm = task->mm;
+  // 遍历系统中所有进程
+  for_each_process(task) {
+    struct mm_struct *mm = task->mm;
 
-        // 如果进程没有 mm（例如内核线程），则跳过
-        if (!mm)
-            continue;
+    // 如果进程没有 mm（例如内核线程），则跳过
+    if (!mm)
+      continue;
 
-        // 若设置了 pid 参数，则仅处理该 PID
-        if (pid != -1 && task->pid != pid)
-            continue;
+    // 若设置了 pid 参数，则仅处理该 PID
+    if (pid != -1 && task->pid != pid)
+      continue;
 
-        pr_info("Process %d (%s):\n", task->pid, task->comm);
+    pr_info("Process %d (%s):\n", task->pid, task->comm);
 
-        // 加锁与迭代
-        mmap_write_lock(mm);
+    // 加锁与迭代
+    mmap_write_lock(mm);
 
-        vma_iter_init(&vmi, mm, 0);
+    vma_iter_init(&vmi, mm, 0);
 
-        // 遍历所有 VMA，切换 VM_WRITE 位并打印差异
-        while ((vma = vma_next(&vmi)) != NULL) {
-            unsigned long old_flags = vma->vm_flags;
-            unsigned long new_flags; /* 仅用于打印/预期 */
+    // 遍历所有 VMA，切换 VM_WRITE 位并打印差异
+    while ((vma = vma_next(&vmi)) != NULL) {
+      unsigned long old_flags = vma->vm_flags;
+      unsigned long new_flags; /* 仅用于打印/预期 */
 
-            if (old_flags & (VM_IO | VM_PFNMAP))
-                continue;
+      if (old_flags & (VM_IO | VM_PFNMAP))
+        continue;
 
-            if (old_flags & VM_SPECIAL)
-                continue;
+      if (old_flags & VM_SPECIAL)
+        continue;
 
-            // TODO: flip vma's WRITE flag
+      /* flip vma's WRITE flag using the proper kernel helpers
+       * vm_flags_set / vm_flags_clear modify the vma flags safely
+       * instead of writing directly to the read-only vm_flags field.
+       */
+      if (old_flags & VM_WRITE)
+        vm_flags_clear(vma, VM_WRITE);
+      else
+        vm_flags_set(vma, VM_WRITE);
 
-            new_flags = vma->vm_flags; /* 实际修改后的值 */
+      new_flags = vma->vm_flags; /* 实际修改后的值 */
 
-            pr_info("    flags before=0x%lx, after=0x%lx, diff=0x%lx\n",
-                    old_flags, new_flags, old_flags ^ new_flags);
-        }
-
-        // 释放锁
-        mmap_write_unlock(mm);
+      pr_info("    flags before=0x%lx, after=0x%lx, diff=0x%lx\n", old_flags,
+              new_flags, old_flags ^ new_flags);
     }
 
-    return 0;
+    // 释放锁
+    mmap_write_unlock(mm);
+  }
+
+  return 0;
 }
 
 // 卸载模块
-static void __exit traverse_all_vma_exit(void)
-{
-    pr_info("Module unloaded: traverse all VMA.\n");
+static void __exit traverse_all_vma_exit(void) {
+  pr_info("Module unloaded: traverse all VMA.\n");
 }
 
 module_init(traverse_all_vma_init);
@@ -75,4 +80,5 @@ module_exit(traverse_all_vma_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("YourName");
-MODULE_DESCRIPTION("Traverse virtual address space of all processes using kernel module");
+MODULE_DESCRIPTION(
+    "Traverse virtual address space of all processes using kernel module");
