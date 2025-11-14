@@ -12,14 +12,14 @@
 
 /* 消息队列任务结构 */
 struct fuzz_task {
-    int sample_idx;   /* 要使用的共享内存样本索引 */
-    long mtype;       /* 消息类型（必须为 long） */
+  int sample_idx; /* 要使用的共享内存样本索引 */
+  long mtype;     /* 消息类型（必须为 long） */
 };
 
 /* 消息封装（用于 msgsnd/msgrcv） */
 struct fuzz_msg {
-    long mtype;
-    struct fuzz_task task;
+  long mtype;
+  struct fuzz_task task;
 };
 
 #endif /* IPC_COMMON_H */
