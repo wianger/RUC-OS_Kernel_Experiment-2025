@@ -1,7 +1,7 @@
 #include <linux/init.h>
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/kallsyms.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <linux/syscalls.h> /* for NR_syscalls if available */
 
 MODULE_LICENSE("GPL");
@@ -17,46 +17,51 @@ MODULE_VERSION("0.1");
  * to find the address of sys_call_table.
  * Return NULL if not found.
  */
-static unsigned long *get_syscall_table_addr(void)
-{
-    // TODO: call kallsyms_lookup_name("sys_call_table")
-    // TODO: check if the result is zero
-    // TODO: cast the result to (unsigned long *) and return it
-    return NULL; // temporary placeholder
+static unsigned long *get_syscall_table_addr(void) {
+  // TODO: call kallsyms_lookup_name("sys_call_table")
+  // TODO: check if the result is zero
+  // TODO: cast the result to (unsigned long *) and return it
+  unsigned long *addr = (unsigned long *)kallsyms_lookup_name("sys_call_table");
+  if (!addr)
+    return NULL;
+  return addr;
 }
 
 /* Module init function */
-static int __init syscall_show_init(void)
-{
-    unsigned long *syscall_table;
-    int i;
-    char symbuf[KSYM_SYMBOL_LEN];
+static int __init syscall_show_init(void) {
+  unsigned long *syscall_table;
+  int i;
+  char symbuf[KSYM_SYMBOL_LEN];
 
-    pr_info("syscall_show: module init\n");
+  pr_info("syscall_show: module init\n");
 
-    // TODO: call get_syscall_table_addr() and assign to syscall_table
-    // TODO: if syscall_table is NULL, return -ENOENT
+  // TODO: call get_syscall_table_addr() and assign to syscall_table
+  // TODO: if syscall_table is NULL, return -ENOENT
+  syscall_table = get_syscall_table_addr();
+  if (!syscall_table)
+    return -ENOENT;
 
-    pr_info("syscall_show: sys_call_table at %p\n", syscall_table);
+  pr_info("syscall_show: sys_call_table at %p\n", syscall_table);
 
-    for (i = 0; i < NR_syscalls; i++) {
-        unsigned long addr = syscall_table[i];
-        if (!addr) {
-            pr_info("syscall[%3d] : <NULL>\n", i);
-            continue;
-        }
-
-        // TODO: use sprint_symbol(symbuf, addr) to resolve symbol name
-        pr_info("syscall[%3d] = %p -> %s\n", i, (void *)addr, symbuf);
+  for (i = 0; i < NR_syscalls; i++) {
+    if (i > 453)
+      pr_info("Here\n");
+    unsigned long addr = syscall_table[i];
+    if (!addr) {
+      pr_info("syscall[%3d] : <NULL>\n", i);
+      continue;
     }
+    // TODO: use sprint_symbol(symbuf, addr) to resolve symbol name
+    sprint_symbol(symbuf, addr);
+    pr_info("syscall[%3d] = %lx -> %s\n", i, addr, symbuf);
+  }
 
-    return 0;
+  return 0;
 }
 
 /* Module exit function */
-static void __exit syscall_show_exit(void)
-{
-    pr_info("syscall_show: module exit\n");
+static void __exit syscall_show_exit(void) {
+  pr_info("syscall_show: module exit\n");
 }
 
 module_init(syscall_show_init);
