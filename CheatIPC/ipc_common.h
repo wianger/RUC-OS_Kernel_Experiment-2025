@@ -9,8 +9,8 @@
 #define MAX_TEXT 256
 
 struct msgbuf {
-    long mtype;
-    char mtext[MAX_TEXT];
+  long mtype;
+  char mtext[MAX_TEXT];
 };
 
 #endif
