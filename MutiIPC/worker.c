@@ -36,7 +36,18 @@ int main(int argc, char **argv) {
   }
   int master_fd = atoi(argv[1]);
 
-  signal(SIGUSR1, sigusr1_handler);
+  // signal(SIGUSR1, sigusr1_handler);
+  // [INFO]:必须同时禁用编译选项的c99，以及宏定义#define _XOPEN_SOURCE
+  // 700，否则signal定义的信号为一次性的
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sa_handler = sigusr1_handler;
+  sa.sa_flags = 0; // Do not use SA_RESTART so sleep/usleep can be interrupted
+  sigemptyset(&sa.sa_mask);
+  if (sigaction(SIGUSR1, &sa, NULL) < 0) {
+    perror("sigaction");
+    exit(1);
+  }
 
   if (shmsem_init(SHM_KEY, SEM_KEY) < 0)
     exit(1);

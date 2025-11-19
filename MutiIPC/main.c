@@ -106,13 +106,9 @@ int main(int argc, char **argv) {
     if (pipes_fd[i][0] > maxfd)
       maxfd = pipes_fd[i][0];
 
-  //   int count = 0;
   while (!got_crash) {
-    // count++;
-    // printf("count: %d\n", count);
     /* 选择样本：随机或轮询 */
     sample_idx = (rand() % sample_count);
-    // printf("Master: dispatching sample index %d\n", sample_idx);
     struct fuzz_task t;
     t.sample_idx = sample_idx;
     t.mtype = 1;
@@ -120,8 +116,9 @@ int main(int argc, char **argv) {
       fprintf(stderr, "Master: failed to send task %d\n", sample_idx);
     } else {
       /* 通知所有 worker 开始（广播 SIGUSR1） */
-      for (int w = 0; w < WORKER_COUNT; ++w)
+      for (int w = 0; w < WORKER_COUNT; ++w) {
         kill(workers[w], SIGUSR1);
+      }
     }
 
     /* 小延迟，避免过度占用 CPU；可根据目标调整 */
