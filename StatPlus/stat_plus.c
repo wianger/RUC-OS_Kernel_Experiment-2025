@@ -145,6 +145,58 @@ static int __init stat_plus_init(void) {
             (long long)ct.tv_sec, (unsigned long)ct.tv_nsec);
   }
 
+  /* TODO (optional): Use an RCU-friendly approach for walking the fd table
+   * and briefly justify the synchronization choice.
+   */
+
+  /* Drop the task reference here to avoid leaks in the skeleton.
+   * When you implement the TODOs above, adjust the placement accordingly.
+   */
+  put_task_struct(task);
+
+  if (!file) {
+    pr_err("StatPlus: pid %d has no open file at fd=%d\n", pid, fd);
+    return -EBADF;
+  }
+
+  /* Gather and print information. NOTE: keep the block below unchanged. */
+  {
+    char path_buf[64];
+    char *path = (char *)"(todo)";
+    struct inode *inode = NULL;
+    umode_t mode = 0;
+    const char *type = "(todo)";
+    kuid_t kuid;
+    kgid_t kgid;
+    unsigned int uid = 0;
+    unsigned int gid = 0;
+    loff_t size = 0;
+    loff_t pos = 0;
+    struct timespec64 at = (struct timespec64){0};
+    struct timespec64 mt = (struct timespec64){0};
+    struct timespec64 ct = (struct timespec64){0};
+    dev_t sdev = 0;
+
+    /* TODO: Fill all fields from file/inode under proper sync; get path via
+     * d_path (handle IS_ERR). */
+
+    pr_info("StatPlus: PID=%d FD=%d\n", pid, fd);
+    pr_info("  path: %s\n", path);
+    pr_info("  type: %s\n", type);
+    pr_info("  mode: %#o (perm=%#o)\n", mode, mode & 07777);
+    pr_info("  uid: %u  gid: %u\n", uid, gid);
+    pr_info("  size: %lld  pos: %lld\n", (long long)size, (long long)pos);
+    pr_info("  inode: %lu  nlink: %lu\n", (unsigned long)inode->i_ino,
+            (unsigned long)inode->i_nlink);
+    pr_info("  flags: %#x  fmode: %#x\n", file->f_flags, file->f_mode);
+    pr_info("  superblock: %s  sb_dev: %u:%u\n",
+            inode->i_sb ? inode->i_sb->s_id : "?", MAJOR(sdev), MINOR(sdev));
+    pr_info("  atime: %lld.%09lu\n  mtime: %lld.%09lu\n  ctime: %lld.%09lu\n",
+            (long long)at.tv_sec, (unsigned long)at.tv_nsec,
+            (long long)mt.tv_sec, (unsigned long)mt.tv_nsec,
+            (long long)ct.tv_sec, (unsigned long)ct.tv_nsec);
+  }
+
   /* Balance get_file() once the TODOs are implemented. */
   fput(file);
   return 0;
