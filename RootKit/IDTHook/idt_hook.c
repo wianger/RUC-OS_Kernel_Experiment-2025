@@ -4,10 +4,10 @@
  * WARNING: 仅供学习演示，请在虚拟机中测试。
  */
 
-#include <linux/module.h>
-#include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Demo");
@@ -17,39 +17,45 @@ MODULE_VERSION("1.0");
 static char *dev_id = "keylogger";
 
 /* IRQ1 的中断号就是 1 */
-static irqreturn_t keylog_irq_handler(int irq, void *dev)
-{
-    unsigned char scancode;
+static irqreturn_t keylog_irq_handler(int irq, void *dev) {
+  unsigned char scancode;
+  unsigned char status;
 
-    // TODO: 从键盘控制器端口读取扫描码
+  // TODO: 从键盘控制器端口读取扫描码
+  status = inb(0x64);
+  printk(KERN_INFO "keylog: IRQ triggered, status = 0x%02x\n", status);
+  if (status & 0x01) {
+    scancode = inb(0x60);
+    printk(KERN_INFO "keylog: Key Captured: 0x%02x\n", scancode);
+  } else {
+    printk(KERN_INFO "keylog: Buffer empty (System driver took it?)\n");
+  }
 
-    /* 不阻止其他共享此 IRQ 的处理器 */
-    return IRQ_NONE;
+  /* 不阻止其他共享此 IRQ 的处理器 */
+  return IRQ_NONE;
 }
 
-static int __init keylog_init(void)
-{
-    int ret;
+static int __init keylog_init(void) {
+  int ret;
 
-    /* 请求共享 IRQ1 */
-    ret = request_irq(1,                   /* IRQ 号 */
-                      keylog_irq_handler,  /* 处理函数 */
-                      IRQF_SHARED,         /* 可共享 */
-                      "keylogger",         /* 名称，会显示在 /proc/interrupts */
-                      &dev_id);            /* 用于区分共享者 */
-    if (ret) {
-        printk(KERN_ERR "keylog: request_irq failed (%d)\n", ret);
-        return ret;
-    }
+  /* 请求共享 IRQ1 */
+  ret = request_irq(1,                  /* IRQ 号 */
+                    keylog_irq_handler, /* 处理函数 */
+                    IRQF_SHARED,        /* 可共享 */
+                    "keylogger",        /* 名称，会显示在 /proc/interrupts */
+                    &dev_id);           /* 用于区分共享者 */
+  if (ret) {
+    printk(KERN_ERR "keylog: request_irq failed (%d)\n", ret);
+    return ret;
+  }
 
-    printk(KERN_INFO "keylog: IRQ1 handler installed\n");
-    return 0;
+  printk(KERN_INFO "keylog: IRQ1 handler installed\n");
+  return 0;
 }
 
-static void __exit keylog_exit(void)
-{
-    free_irq(1, &dev_id);
-    printk(KERN_INFO "keylog: IRQ1 handler removed\n");
+static void __exit keylog_exit(void) {
+  free_irq(1, &dev_id);
+  printk(KERN_INFO "keylog: IRQ1 handler removed\n");
 }
 
 module_init(keylog_init);

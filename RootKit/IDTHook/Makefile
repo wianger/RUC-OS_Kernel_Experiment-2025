@@ -4,7 +4,7 @@ obj-m += idt_hook.o
 CURRENT_PATH := $(shell pwd)
 
 # 目标内核源码路径
-LINUX_KERNEL_PATH := /home/user/Kernel/v6.6/x86_64/
+LINUX_KERNEL_PATH := /lib/modules/$(shell uname -r)/build
 
 # 默认目标：同时构建内核模块和用户态程序
 all: idt_hook.ko
