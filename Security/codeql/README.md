@@ -89,7 +89,7 @@ export PATH="$PWD/codeql-bin:$PATH"
 
 ```sh
 export PATH="$PWD/codeql-bin:$PATH"
-codeql database analyze linux-db queries/ql --format=sarif-latest --output lab-findings.sarif
+codeql database analyze linux-db queries/ql --rerun --format=sarif-latest --output lab-findings.sarif
 ```
 
 ## CodeQL 基础操作
