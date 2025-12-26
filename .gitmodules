@@ -1,0 +1,3 @@
+[submodule "Security/syzkaller/syzkaller"]
+	path = Security/syzkaller/syzkaller
+	url = https://github.com/google/syzkaller.git
