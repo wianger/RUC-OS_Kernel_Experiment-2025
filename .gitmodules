@@ -1,3 +1,6 @@
 [submodule "Security/syzkaller/syzkaller"]
 	path = Security/syzkaller/syzkaller
 	url = https://github.com/google/syzkaller.git
+[submodule "Security/codeql/codeql"]
+	path = Security/codeql/codeql
+	url = https://github.com/github/codeql.git
